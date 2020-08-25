@@ -47,10 +47,15 @@ Rscript unarchive_request.R
 
 ## Troubleshooting 
 This script saves the timestamp of the last unarchive/download attempt in the CSV. In addition the script saves the wget output for each file. 
+
 (1) Check that your computer/server didn't restart. Or that the Copernicus server is connected. 
+
 (2) Check that you have the right UUIDs and the CSV is formatted in the correct way. See example CSV. 
+
 (3) Check the .txt files to see if there were any errors with the wget or with the Copernicus server.
+
 (4) Try running the scripts again, or wait a day to try again. 
+
 (5) Consider the possiblity that the Copernicus might not have the file on their server and contact Copernicus directly. 
 
 ## Future Updates
@@ -65,5 +70,5 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 Please make sure to update tests as appropriate.
 
 ## Acknowledgements
-Thank you to Chrisitana Ade, Brittany Lopez Barreto, Jacob Nesslage, and Erin Hestir for the comments on the initial tests of these scripts. 
+Thank you to Christiana Ade, Brittany Lopez Barreto, Jacob Nesslage, and Erin Hestir for the comments on the initial tests of these scripts. 
 
