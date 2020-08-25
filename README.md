@@ -1,8 +1,9 @@
 # wget Sentinel unarchiving and downloading 
 
 ## Overview
+Last updated: 08/25/2020
 
-Staring in 2019, Copernicus began archiving tiles into their Long Term Archive (LTA - https://scihub.copernicus.eu/userguide/LongTermArchive). Depending on the product, tiles before a certain date, 1 year for example, would be archived, thereby needing to be requested to be unarchived. Filed would be unarchived after approximately 24 hours and then remain unarchived for approximately 3 day. 
+Staring in 2019, Copernicus began archiving tiles into their Long Term Archive (LTA - https://scihub.copernicus.eu/userguide/LongTermArchive). Depending on the product, tiles before a certain date, 1 year for example, would be archived, thereby needing to be requested to be unarchived. Files requested using wget (or cURL) should be unarchived by Copernicus after approximately 24 hours and then remain unarchived for approximately 3 day. 
 
 However, this is not the case. After experimenting with wget and unarchiving, some files took almost 7 days before they were unarchived. 
 

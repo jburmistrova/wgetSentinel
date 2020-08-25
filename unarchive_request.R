@@ -31,7 +31,7 @@ txtFile <- "/copernicus_username_password.txt"
 #### MAX FILES, NOTE MUST BE >0 and <20 ####
 max_files <- 20
 
-#### SCRIPT PAUSE TIME IN SECONDS, RECOMMENDED 12 HOURS ####
+#### SCRIPT PAUSE TIME IN SECONDS, RECOMMENDED 12 HOURS, MUST BE >= 12 HOURS ####
 pause_hours <- 12
 pause_seconds <- pause_hours * 60 * 60 
 
