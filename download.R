@@ -15,7 +15,7 @@ require(tidyverse)
 )
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-####             START USER DEFINED VARIABLES       #### 
+####             INPUT VARIABLES       #### 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # The following variables should be defined by the user each time.
 #### INPUT FILES ####
@@ -30,23 +30,34 @@ outPathSAFE <- "/downloaded"
 
 #### USER DEFINED USERNAME AND PASSWORD AS A TXT FILE ####
 # 3) 
-txtFile <- "/copernicus_username_password.txt"
+username_password <- "/copernicus_username_password.txt"
 
+#### SCRIPT SLEEP TIME IN SECONDS, RECOMMENDED 24 HOURS ####
+sleep_hours <- 24
+sleep_seconds <- pause_hours * 60 * 60 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-####             END USER DEFINED VARIABLES        ####
+####             INPUT VARIABLES        ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             START SCRIPT                      ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#read in txt file that has username and password
+un_pw <- read.delim(username_password, header = T, sep = " ")
+username <- un_pw[1,2]
+password <- un_pw[2,2]
+
+#read in txt file that has input CSV/output paths
+in_out <- read.delim(input_output, header = T, sep = " ")
+inFile <- in_out[1,2]
+outPathWgetTXT <- in_out[2,2]
+outPathScriptTXT <- in_out[3,2]
+outPathSAFE <- in_out[4,2]
 
 my_csv <- read.csv(inFile)
 my_requested <- length(which(my_csv$status == "202 Accepted"))
-
-new_status <- vector()
-new_timestamp_attempt <- vector()
 
 my_counter <- 1
 
@@ -58,14 +69,9 @@ if (my_requested < 1) {
 while (my_requested != 0) {
   
   if (my_counter > 1) { 
-    print(paste0("Sleeping for 1 day/24 hours"))
-    Sys.sleep(86400)
+    print(paste0("Sleeping for ", pause_hours," hours, or ", pause_seconds," seconds."))
+    Sys.sleep(sleep_seconds)
   }
-
-  #read in txt file that has username and password
-  un_pw <- read.delim(txtFile, header = T, sep = " ")
-  username <- un_pw[1,2]
-  password <- un_pw[2,2]
   
   #select uuid's to download that are currenlty PENDING 
   my_uuid <- read_csv(inFile)%>%
@@ -87,18 +93,18 @@ while (my_requested != 0) {
     filenameScript <- paste0(outPathScriptTXT,"/download_output_",my_uuid$title[u],".txt")
     filenameWget <- paste0(outPathWgetTXT,"/download_output_",my_uuid$title[u],".txt")
     
-    system(paste0("wget --content-disposition --continue --user=",username," --password=",password," -o ",filenameWget," -N -P ",outPathSAFE," \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
+    system(paste0("wget --no-check-certificate --user=",username," --password=",password," -o ",filenameWget," -N -P ",outPathSAFE," \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
     
-    new_status[u] <- readLines(filenameWget, n=7)[6]%>%
+    new_status <- readLines(filenameWget, n=7)[6]%>%
       str_extract("[^\\.]*$")%>%
       str_trim()
     
-    new_timestamp_attempt[u] <- Sys.time()
+    new_timestamp_attempt <- format(Sys.time(), "%Y%m%d_%H%M%S")
     my_uuid$download_attempt[u] <- my_uuid$download_attempt[u] + 1
     
     #update the uuid's status to new_status
-    my_uuid$status[u] <- new_status[u]
-    my_uuid$timestamp_attempt[u] <- new_timestamp_attempt[u]
+    my_uuid$status[u] <- new_status
+    my_uuid$timestamp_attempt[u] <- new_timestamp_attempt
     
     #add the requested tiles, with new_status to entire CSV file
     my_csv <- read.csv(inFile)%>%

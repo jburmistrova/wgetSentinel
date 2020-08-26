@@ -1,0 +1,1 @@
+The output of both scripts saves here. It gives you a summary of the CSV. It can also help with troubleshooting as it can show you the last time the script ran. 

@@ -21,10 +21,10 @@ Make sure you have a Copernicus account.
 Clone this repository on the computer/server you plan to run the script on. 
 
 ## Usage
-First, change the username_password.txt file to have your username and password. 
-Next, in the scripts, change you input CSV file, ouput folder for the tiles, and output folder for the wget and script reports. In addition you can change the number of files the unarchive_request.R script requests (currently set to 20 that are "archived"), and the number of the download.R script attempts to download (currently it is set to request all files successfully requested, "202 Accepted"). You can also change the time in between each run in seconds. 
+First, change the copernicus_username_password.txt file to have your username and password. 
+Next, in the input_output.txt file, change the input CSV file path to your own CSV, and as a option you can either keep the output paths or change them to where you want to save the Sentinel SAFE files (i.e. /downloaded), and output folder for the wget (.wget_TXT) and script reports (/script_TXT). In addition you can change the number of files the unarchive_request.R script requests (currently set to 20 that are "archived"), and the number of the download.R script attempts to download (currently it is set to request all files successfully requested, "202 Accepted"). You can also change the time in between each run in seconds. 
 In your terminal, open two tabs/windows. Move to the directory you cloned in both tab/windows. Then, run the scripts seperately.
-Check on the scripts every once in a while, my suggestion is daily, to make sure it's still running. 
+Check on the scripts every once in a while, my suggestion is to check daily, to make sure it's still running. 
 
 Example: 
 ```r
@@ -49,7 +49,9 @@ Rscript unarchive_request.R
 ## Troubleshooting 
 This script saves the timestamp of the last unarchive/download attempt in the CSV. In addition the script saves the wget output for each file. 
 
-(1) Check that your computer/server didn't restart. Or that the Copernicus server is connected. 
+(1) Check that your path is being read correctly. 
+
+(2) Check that your computer/server didn't restart.
 
 (2) Check that you have the right UUIDs and the CSV is formatted in the correct way. See example CSV. 
 
@@ -65,6 +67,24 @@ Some things that I am working on for the next version:
 * A bash script to possibly run both scripts at the same time.
 * The script will automattically add columns if you don't have them, but currently you must change them manually. 
 * Having the option to input files as a textfile instead of editing the script. 
+
+## Known Issues 
+* Timestamp in the CSV is not working. -- change line 96 in download.R and line 107 in unarchive_request.R to  
+            new_timestamp_attempt[u] <- format(Sys.time(), "%Y%m%d_%H%M%S")
+
+* Ingestion dates getting deleted with NAs
+
+* script_txt file is blank
+
+* change sleeping to hours as pause_hours - done and switched to to sleep_hours to make more sense
+
+* 403 Unauthorized not saving - change -- change new status to 
+            new_status[u] <- read_lines(outPathTXT,skip = 0, skip_empty_rows = FALSE, n_max = -1L)%>%
+            na.omit(str_extract(test, "(?:[:digit:]{3}[:space:])+[[:alpha:]$]+"))[3]
+            
+* Delete new status <- vector -DONE
+
+* Delete  my_uuid$download_attempt[u] <- my_uuid$download_attempt[u] + 1 from unarchive_request.R file
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

@@ -1,0 +1,5 @@
+item value
+inputQueryCSV /example_query.csv
+outPathforWgetTXT /wget_txt_output
+outPathforScriptTXT /script_txt_output
+outPathforSAFE /downloaded
