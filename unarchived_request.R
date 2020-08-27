@@ -14,61 +14,60 @@ library(tidyverse)
 )
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-####             START USER DEFINED VARIABLES       #### 
+####             INPUT VARIABLES       #### 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # The following variables should be defined by the user each time.
-#### INPUT FILES ####
-inFile <- "/example_query.csv"
-
-#### OUTPUT FILES ####
-outPathWgetTXT <- "/wget_txt_output"
-outPathScriptTXT <- "/script_txt_output"
-outPathSAFE <- "/downloaded" 
+#### INPUT CSV AND OUTPUT PATHS TXT FILE ####
+input_output <- "input_output.txt"
 
 #### USER DEFINED USERNAME AND PASSWORD AS A TXT FILE ####
-txtFile <- "/copernicus_username_password.txt"
+username_password <- "copernicus_username_password.txt"
 
 #### MAX FILES, NOTE MUST BE >0 and <20 ####
 max_files <- 20
 
-#### SCRIPT PAUSE TIME IN SECONDS, RECOMMENDED 12 HOURS, MUST BE >= 12 HOURS ####
-pause_hours <- 12
-pause_seconds <- pause_hours * 60 * 60 
+#### SCRIPT SLEEP TIME IN SECONDS, RECOMMENDED 12 HOURS ####
+sleep_hours <- 12
+sleep_seconds <- pause_hours * 60 * 60 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-####             END USER DEFINED VARIABLES        ####
+####             INPUT VARIABLES        ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             START SCRIPT                      ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#read in txt file that has username and password
+un_pw <- read.delim(username_password, header = T, sep = " ")
+username <- un_pw[1,2]
+password <- un_pw[2,2]
+
+#read in txt file that has input CSV/output paths
+in_out <- read.delim(input_output, header = T, sep = " ")
+inFile <- in_out[1,2]
+outPathWgetTXT <- in_out[2,2]
+outPathScriptTXT <- in_out[3,2]
+outPathSAFE <- in_out[4,2]
+
 my_csv <- read.csv(inFile)
-my_archived <- length(which(my_csv$status %in% c("archived", "403 Forbidden", "NA")))
+my_archived <- length(which(my_csv$status %in% c("archived", "403 Forbidden", "<NA>")))
 
-new_status <- vector()
-new_timestamp_attempt <- vector()
-
-#this counter is so that 
+#a counter to keep track of while loop
 my_counter <- 1
 
 #repeat the code here
 while (my_archived != 0) {
   
   if (my_counter > 1) { 
-    print(paste0("Sleeping for 1 day/24 hours"))
+    print(paste0("Sleeping for ", sleep_hours," hours, or ", sleep_seconds," seconds."))
     Sys.sleep(pause_seconds)
   }
   
   #if max_files is greater than 20, the script stops immediately and tells the user
   #to change max_files to a value <20
   if(any(max_files < 1 | max_files > 20) ) stop('max_files is not between 1 and 20; maxumum files you can request to unarchive is 20 according to ESA copernicus')
-
-  #read in txt file that has username and password
-  un_pw <- read.delim(txtFile, header = T, sep = " ")
-  username <- un_pw[1,2]
-  password <- un_pw[2,2]
-
+  
   #read the csv file and find all archived files
   my_uuid <- read.csv(inFile)%>%
     filter(status %in% c("archived", "403 Forbidden", "NA"))
@@ -86,35 +85,33 @@ while (my_archived != 0) {
     slice(1:max_files) %>%
     mutate(uuid = as.character(uuid))
 
-  #this gives the user a sanity check, makes sure the code is wget'ing in a UUID
+  #this gives the user a sanity check, makes sure the code is wget'ing is a UUID
   paste0("You have requested the following UUID's:")
   print(my_uuid$uuid)
   
   #start by requesting the tiles/uuids, and repeat for the max_files 
   for (u in 1:max_files) {
     
-    filenameScript <- paste0(outPathScriptTXT,"/download_output_",my_uuid$title[u],".txt")
-    filenameWget <- paste0(outPathWgetTXT,"/download_output_",my_uuid$title[u],".txt")
+    filenameScript <- paste0(outPathScriptTXT,"/unarchive_output_",my_uuid$title[u],".txt")
+    filenameWget <- paste0(outPathWgetTXT,"/unarchive_output_",my_uuid$title[u],".txt")
   
     #using system(), you are running wget as if running in linux
-    system(paste0("wget --content-disposition --continue --user=",username," --password=",password," -o ",filenameSpecific," -N \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
+    system(paste0("wget --content-disposition --continue --user=",username," --password=",password," -o ",filenameWget," -N \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
   
   
-    new_status[u] <- readLines(filenameSpecific, n=7)[6]%>%
-      str_extract("[^\\.]*$")%>%
-      str_trim()
+    new_status <- read_lines(outPathTXT,skip = 0, skip_empty_rows = FALSE, n_max = -1L)%>%
+      na.omit(str_extract(test, "(?:[:digit:]{3}[:space:])+[[:alpha:]$]+"))[3]
   
-    new_timestamp_attempt[u] <- Sys.time()
-    my_uuid$download_attempt[u] <- my_uuid$download_attempt[u] + 1
+    new_timestamp_attempt <- format(Sys.time(), "%Y%m%d_%H%M%S")
   
     #update the uuid's status to new_status
-    my_uuid$status[u] <- new_status[u]
-    my_uuid$timestamp_attempt[u] <- new_timestamp_attempt[u]
+    my_uuid$status[u] <- new_status
+    my_uuid$timestamp_attempt[u] <- new_timestamp_attempt
   
     #add the requested tiles, with new_status to entire CSV file
     my_csv <- read.csv(inFile)%>%
-      slice(-c(my_uuid$X)) #remove all the rows that are now pending
-    my_csv <- rbind(my_csv, my_uuid)%>%
+      slice(-c(my_uuid$X[u])) #remove all the rows that are now pending
+    my_csv <- rbind(my_csv, my_uuid[u,])%>%
       arrange(X)
   
     #save the csv with updated status
@@ -123,7 +120,7 @@ while (my_archived != 0) {
   
   }
   
-  sink(paste0(outPathScriptTXT,"/archive_script_output_",format(Sys.time(), "%Y%m%d_%H%M"),".txt"))
+  sink(paste0(outPathScriptTXT,"/archive_script_output_",format(Sys.time(), "%Y%m%d_%H%M"),".txt"), type = "output")
   #create a summary of the CSV for the user
   my_archived <- length(which(my_csv$status == c("archived", "403 Forbidden", NA)))
   my_requested <- length(which(my_csv$status == "202 Accepted"))
@@ -146,5 +143,7 @@ while (my_archived != 0) {
   paste0("This script has run ", my_counter, " times.")
   
   sink()
+  
+  paste0("This script has run ", my_counter, " times.")
 }
   
