@@ -34,7 +34,7 @@ username_password <- "/copernicus_username_password.txt"
 
 #### SCRIPT SLEEP TIME IN SECONDS, RECOMMENDED 24 HOURS ####
 sleep_hours <- 24
-sleep_seconds <- pause_hours * 60 * 60 
+sleep_seconds <- sleep_hours * 60 * 60 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             INPUT VARIABLES        ####
@@ -69,7 +69,7 @@ if (my_requested < 1) {
 while (my_requested != 0) {
   
   if (my_counter > 1) { 
-    print(paste0("Sleeping for ", pause_hours," hours, or ", pause_seconds," seconds."))
+    print(paste0("Sleeping for ", sleep_hours," hours, or ", sleep_seconds," seconds."))
     Sys.sleep(sleep_seconds)
   }
   
@@ -95,9 +95,8 @@ while (my_requested != 0) {
     
     system(paste0("wget --no-check-certificate --user=",username," --password=",password," -o ",filenameWget," -N -P ",outPathSAFE," \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
     
-    new_status <- readLines(filenameWget, n=7)[6]%>%
-      str_extract("[^\\.]*$")%>%
-      str_trim()
+    new_status <- read_lines(outPathWgetTXT,skip = 0, skip_empty_rows = FALSE, n_max = -1L)%>%
+      na.omit(str_extract("(?:[:digit:]{3}[:space:])+[[:alpha:]$]+"))[3]
     
     new_timestamp_attempt <- format(Sys.time(), "%Y%m%d_%H%M%S")
     my_uuid$download_attempt[u] <- my_uuid$download_attempt[u] + 1
