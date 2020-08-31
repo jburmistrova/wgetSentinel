@@ -93,12 +93,12 @@ while (my_requested != 0) {
     filenameScript <- paste0(outPathScriptTXT,"/download_output_",my_uuid$title[u],".txt")
     filenameWget <- paste0(outPathWgetTXT,"/download_output_",my_uuid$title[u],".txt")
     
-    system(paste0("wget --no-check-certificate --user=",username," --password=",password," -o ",filenameWget," -N -P ",outPathSAFE," \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
+    system(paste0("wget --content-disposition --continue --user=",username," --password=",password," -o ",filenameWget," -N -P ",outPathSAFE," \"https://scihub.copernicus.eu/apihub/odata/v1/Products(\'",my_uuid$uuid[u],"\')/\\$value\""))
     
-    new_status <- read_lines(outPathWgetTXT,skip = 0, skip_empty_rows = FALSE, n_max = -1L)%>%
-      na.omit(str_extract("(?:[:digit:]{3}[:space:])+[[:alpha:]$]+"))[3]
+    new_status <- read_lines(outPathWgetTXT,skip = 0, skip_empty_rows = FALSE, n_max = -1L)
+    new_status <- na.omit(str_extract(new_status, pattern = "(?:[:digit:]{3}[:space:])+[[:alpha:]$]+"))[3]
     
-    new_timestamp_attempt <- format(Sys.time(), "%Y%m%d_%H%M%S")
+    ?readnew_timestamp_attempt <- format(Sys.time(), "%Y%m%d_%H%M%S")
     my_uuid$download_attempt[u] <- my_uuid$download_attempt[u] + 1
     
     #update the uuid's status to new_status
